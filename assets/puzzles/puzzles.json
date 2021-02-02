@@ -1,0 +1,16 @@
+{
+     "microscope": {
+          "name": "Microscope Puzzle",
+          "description": "The player must put a slide on the microscope to activate a reed switch.",
+          "type": "SWITCH",
+          "version": "1.1",
+          "modulePath": "microscope.js"
+     },
+     "dog": {
+          "name": "The Annoying Dog Puzzle",
+          "description": "Kick the dog to unlock a drawer",
+          "version": "1.0",
+          "type": "DOG",
+          "modulePath": "dog.js"
+     }
+}

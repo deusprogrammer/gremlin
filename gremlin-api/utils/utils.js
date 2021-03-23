@@ -1,4 +1,6 @@
-var fs = require('fs');
+const fs = require('fs');
+const dgram = require('dgram');
+const broadcastAddress = require('broadcast-address');
 
 let validateHandlers = (eventHandlers) => {
     let allowedHandlers = ['complete', 'fail', 'activate'];
@@ -90,11 +92,31 @@ let storePuzzles = async (puzzles, contextRoot) => {
     await writeFile(`${contextRoot}/puzzles.json`, JSON.stringify(puzzles, null, 5));
 };
 
+let pingAllPuzzles = async () => {
+    let client = dgram.createSocket("udp4");
+    let broadcastIp = "10.0.0.0.255";
+    let port = 1234;
+    console.log(`BROADCAST ${broadcastIp}`);
+
+    let message = JSON.stringify({
+        type: "initialize"
+    });
+
+    client.bind(port, () => {
+        client.setBroadcast(true);
+        client.send(message, 0, message.length, port, broadcastIp, () => {
+            client.close();
+            console.log("PEE PEE");
+        });
+    });
+}
+
 module.exports = {
     readFile,
     writeFile,
     loadModule,
     loadPuzzles,
     storeModule,
-    storePuzzles
+    storePuzzles,
+    pingAllPuzzles
 };

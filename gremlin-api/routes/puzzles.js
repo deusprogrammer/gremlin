@@ -1,5 +1,5 @@
 const express = require('express');
-const {loadPuzzles, loadModule, storePuzzles, storeModule, readFile} = require('../utils/utils');
+const {loadPuzzles, storePuzzles, storeModule, readFile, pingAllPuzzles} = require('../utils/utils');
 
 let router = express.Router();
 let contextRoot = '../assets/puzzles';
@@ -80,6 +80,19 @@ router.route('/:id/events')
         return res.send();
     });
 
+router.route('/:id/ping')
+    .post(async (req, res) => {
+        systemContext.puzzles[req.params.id].lastPing = Date.now();
+
+        // TODO Figure out how best to commit
+        await storePuzzles(systemContext.puzzles, contextRoot);
+
+        return res.send();
+    });
+
 refreshCache();
+setInterval(() => {
+    pingAllPuzzles();
+}, 15000);
 
 module.exports = router;

@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import socket
 import requests
 import json
@@ -25,15 +27,15 @@ def loop():
 
 #######/TEMPLATE######
 
-serverData = {}
+serverData = {} 
 
 def notifyServer(status):
-    requests.post(f'http://{addr[0]}:{addr[1]}/puzzles/{PUZZLE_ID}/events', data = {
+    requests.post(f'http://{serverData.get("ipAddress")}:{serverData.get("port")}/puzzles/{PUZZLE_ID}/events', data = {
         'eventType': status
     })
 
 def pingServer():
-    requests.post(f'http://{addr[0]}:{addr[1]}/puzzles/{PUZZLE_ID}/ping')
+    requests.post(f'http://{serverData.get("ipAddress")}:{serverData.get("port")}/puzzles/{PUZZLE_ID}/ping')
 
 def solvePuzzle():
     notifyServer("complete")
@@ -45,7 +47,9 @@ def activatePuzzle():
     notifyServer("activate")
 
 def onInitialize(body, addr):
-    serverData = {'ipAddress': addr[0], 'port': addr[1]}
+    print(f'INITIALIZATION CALL FROM {addr[0]} on {body.get("port")}')
+    serverData['ipAddress'] = addr[0]
+    serverData['port'] = body.get("port") 
     pingServer()
 
 def mainEventLoop():
@@ -67,13 +71,13 @@ def listenForBroadcast():
     while running:
         data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
         body = json.loads(data)
-        if body.type == "initialize":
+        if body['type'] == "initialize":
             onInitialize(body, addr)
-        elif body.type == "activate":
+        elif body['type'] == "activate":
             onActivate(body)
-        elif body.type == "reset":
+        elif body['type'] == "reset":
             onReset(body)
-        elif body.type == "solve":
+        elif body['type'] == "solve":
             onReset(body)
 
 listener = threading.Thread(target=listenForBroadcast)

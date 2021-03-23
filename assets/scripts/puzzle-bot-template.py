@@ -9,7 +9,7 @@ import threading
 
 ## Configuration
 
-PUZZLE_ID = "microscope"
+PUZZLE_ID = "<PUZZLE_ID_HERE>"
 
 ## Event listeners
 

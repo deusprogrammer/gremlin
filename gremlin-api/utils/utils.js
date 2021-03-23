@@ -95,18 +95,18 @@ let storePuzzles = async (puzzles, contextRoot) => {
 let pingAllPuzzles = async () => {
     let client = dgram.createSocket("udp4");
     let broadcastIp = "10.0.0.255";
-    let port = 1234;
+    let port = 6234;
     console.log(`BROADCAST ${broadcastIp}`);
 
     let message = JSON.stringify({
-        type: "initialize"
+        type: "initialize",
+        port: process.env.PORT | "8888"
     });
 
     client.bind(port, () => {
         client.setBroadcast(true);
         client.send(message, 0, message.length, port, broadcastIp, () => {
             client.close();
-            console.log("PEE PEE");
         });
     });
 }

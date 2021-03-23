@@ -82,6 +82,7 @@ router.route('/:id/events')
 
 router.route('/:id/ping')
     .post(async (req, res) => {
+	console.log("PING RECEIVED FROM " + systemContext.puzzles[req.params.id].name);
         systemContext.puzzles[req.params.id].lastPing = Date.now();
 
         // TODO Figure out how best to commit

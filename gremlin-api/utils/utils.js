@@ -94,7 +94,7 @@ let storePuzzles = async (puzzles, contextRoot) => {
 
 let pingAllPuzzles = async () => {
     let client = dgram.createSocket("udp4");
-    let broadcastIp = "10.0.0.0.255";
+    let broadcastIp = "10.0.0.255";
     let port = 1234;
     console.log(`BROADCAST ${broadcastIp}`);
 

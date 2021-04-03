@@ -1,23 +1,58 @@
 const express = require('express');
-const {loadPuzzles, storePuzzles, storeModule, readFile, pingAllPuzzles} = require('../utils/utils');
+//const sound = require('sound-play');
+const sound = require('play-sound')(opts = {player: "mplayer"})
+const {loadPuzzles, storePuzzles, storeModule, readFile, broadcastMessage, pingAllPuzzles, loadSounds} = require('../utils/utils');
 
 let router = express.Router();
-let contextRoot = '../assets/puzzles';
+const puzzlesContextRoot = '../assets/puzzles';
+const soundsContextRoot = '../assets/sounds';
 
 let systemContext = {
     puzzles: {},
+    sounds: {},
     fn: {
-        activatePuzzle: async (puzzle) => { console.log(`Activated ${puzzle.name}`) },
-        resetPuzzle: async (puzzle) => { console.log(`Reset ${puzzle.name}`) },
-        solvePuzzle: async (puzzle) => { console.log(`Solved ${puzzle.name}`) },
-        failPuzzle: async (puzzle) => { console.log(`Failed ${puzzle.name}`) },
+        activatePuzzle: async (puzzle) => { 
+            broadcastMessage({
+                puzzle: puzzle.id,
+                type: "activate"
+            }) 
+        },
+        resetPuzzle: async (puzzle) => { 
+            broadcastMessage({
+                puzzle: puzzle.id,
+                type: "reset"
+            }) 
+        },
+        solvePuzzle: async (puzzle) => { 
+            broadcastMessage({
+                puzzle: puzzle.id,
+                type: "solve"
+            })     
+        },
+        failPuzzle: async (puzzle) => {
+            broadcastMessage({
+                puzzle: puzzle.id,
+                type: "fail"
+            }) 
+        },
         getPuzzleState: async (puzzle) => { return {name: puzzle.name, status: "active"}},
-        playSound: async (soundName) => { console.log(`Playing sound ${soundName}`)}
+        playSound: async (soundName) => { 
+            let path = systemContext.sounds[soundName].path;
+
+            console.log("PLAYING " + (soundsContextRoot + "/" + path));
+
+            sound.play(soundsContextRoot + "/" + path, (err) => {
+                if (err) {
+                    console.error("FAILED TO PLAY SOUND: " + err);
+                }
+            });
+        }
     }
 }
 
 let refreshCache = async () => {
-    systemContext.puzzles = await loadPuzzles(contextRoot);
+    systemContext.puzzles = await loadPuzzles(puzzlesContextRoot);
+    systemContext.sounds = await loadSounds(soundsContextRoot);
 }
 
 router.route('/')
@@ -28,7 +63,7 @@ router.route('/')
         systemContext.puzzles[req.body.id] = req.body;
 
         // TODO Figure out how best to commit
-        await storePuzzles(systemContext.puzzles, contextRoot);
+        await storePuzzles(systemContext.puzzles, puzzlesContextRoot);
 
         return res.send();
     });
@@ -41,7 +76,7 @@ router.route('/:id')
         systemContext.puzzles[req.params.id] = req.body;
 
         // TODO Figure out how best to commit
-        await storePuzzles(systemContext.puzzles, contextRoot);
+        await storePuzzles(systemContext.puzzles, puzzlesContextRoot);
 
         return res.send();
     })
@@ -49,7 +84,7 @@ router.route('/:id')
         delete systemContext.puzzles[req.params.id];
 
         // TODO Figure out how best to commit
-        await storePuzzles(systemContext.puzzles, contextRoot);
+        await storePuzzles(systemContext.puzzles, puzzlesContextRoot);
 
         return res.send();
     });
@@ -57,14 +92,14 @@ router.route('/:id')
 router.route('/:id/handlers')
     .get(async (req, res) => {
         let puzzle = systemContext.puzzles[req.params.id];
-        let script = await readFile(`${contextRoot}/${puzzle.modulePath}`);
+        let script = await readFile(`${puzzlesContextRoot}/${puzzle.modulePath}`);
 
         res.setHeader('content-type', 'text/plain');
         return res.send(script);
     })
     .put(async (req, res) => {
         let puzzle = systemContext.puzzles[req.params.id];
-        await storeModule(`${contextRoot}/${puzzle.modulePath}`, req.body);
+        await storeModule(`${puzzlesContextRoot}/${puzzle.modulePath}`, req.body);
 
         return res.send();
     });
@@ -86,7 +121,7 @@ router.route('/:id/ping')
         systemContext.puzzles[req.params.id].lastPing = Date.now();
 
         // TODO Figure out how best to commit
-        await storePuzzles(systemContext.puzzles, contextRoot);
+        await storePuzzles(systemContext.puzzles, puzzlesContextRoot);
 
         return res.send();
     });

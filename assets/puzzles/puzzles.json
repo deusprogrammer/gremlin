@@ -1,5 +1,11 @@
 {
+     "_start": {
+          "activate": [
+               "microscope"
+          ]
+     },
      "microscope": {
+          "id": "microscope",
           "name": "Microscope Puzzle",
           "description": "The player must put a slide on the microscope to activate a reed switch.",
           "type": "SWITCH",
@@ -8,6 +14,7 @@
           "lastPing": 1616474458896
      },
      "dog": {
+          "id": "dog",
           "name": "The Annoying Dog Puzzle",
           "description": "Kick the dog to unlock a drawer",
           "version": "1.0",

@@ -1,6 +1,5 @@
 const fs = require('fs');
 const dgram = require('dgram');
-const broadcastAddress = require('broadcast-address');
 
 let validateHandlers = (eventHandlers) => {
     let allowedHandlers = ['complete', 'fail', 'activate'];
@@ -14,7 +13,7 @@ let validateHandlers = (eventHandlers) => {
 };
 
 let validateConfig = (config) => {
-    let requiredFields = ['name', 'description', 'type', 'version', 'modulePath'];
+    let requiredFields = ['id', 'name', 'description', 'type', 'version', 'modulePath'];
 
     // Validate
     requiredFields.forEach((field) => {
@@ -61,6 +60,10 @@ let loadPuzzles = async (contextRoot) => {
     let puzzles = JSON.parse(puzzleJson);
 
     for (let puzzleId in puzzles) {
+        if (puzzleId === "_start") {
+            continue;
+        }
+
         // Load puzzle event handlers
         let puzzle = puzzles[puzzleId];
         puzzle.eventHandlers = await loadModule(`${contextRoot}/${puzzle.modulePath}`);
@@ -71,6 +74,13 @@ let loadPuzzles = async (contextRoot) => {
 
     return puzzles;
 };
+
+let loadSounds = async (contextRoot) => {
+    let soundJson = await readFile(`${contextRoot}/sounds.json`);
+    let sounds = JSON.parse(soundJson);
+
+    return sounds;
+}
 
 let storeModule = async (modulePath, script) => {
     let eventHandlers = createModule(script);
@@ -93,19 +103,20 @@ let storePuzzles = async (puzzles, contextRoot) => {
 };
 
 let pingAllPuzzles = async () => {
-    let client = dgram.createSocket("udp4");
-    let broadcastIp = "10.0.0.255";
-    let port = 6234;
-    console.log(`BROADCAST ${broadcastIp}`);
-
-    let message = JSON.stringify({
+    await broadcastMessage({
         type: "initialize",
         port: process.env.PORT | "8888"
     });
+}
+
+let broadcastMessage = async (message) => {
+    let client = dgram.createSocket("udp4");
+    let broadcastIp = "10.0.0.255";
+    let port = 6234;
 
     client.bind(port, () => {
         client.setBroadcast(true);
-        client.send(message, 0, message.length, port, broadcastIp, () => {
+        client.send(JSON.stringify(message), 0, message.length, port, broadcastIp, () => {
             client.close();
         });
     });
@@ -116,7 +127,9 @@ module.exports = {
     writeFile,
     loadModule,
     loadPuzzles,
+    loadSounds,
     storeModule,
     storePuzzles,
-    pingAllPuzzles
+    pingAllPuzzles,
+    broadcastMessage
 };

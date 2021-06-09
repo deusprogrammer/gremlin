@@ -10,8 +10,7 @@
           "description": "The player must put a slide on the microscope to activate a reed switch.",
           "type": "SWITCH",
           "version": "1.1",
-          "modulePath": "microscope.js",
-          "lastPing": 1623217315763
+          "modulePath": "microscope.js"
      },
      "dog": {
           "id": "dog",

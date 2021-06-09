@@ -93,7 +93,7 @@ let storeModule = async (modulePath, script) => {
 
 let storePuzzles = async (puzzles, contextRoot) => {
     for (let puzzleId in puzzles) {
-        let puzzle = puzzles[puzzleId];
+        let puzzle = {...puzzles[puzzleId]};
         delete puzzle['eventHandlers'];
 
         validateConfig(puzzle);

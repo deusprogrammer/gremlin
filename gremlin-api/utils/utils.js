@@ -111,12 +111,14 @@ let pingAllPuzzles = async () => {
 
 let broadcastMessage = async (message) => {
     let client = dgram.createSocket("udp4");
-    let broadcastIp = "10.0.0.255";
+    let broadcastIp = "255.255.255.255";
     let port = 6234;
+
+    let payload = JSON.stringify(message);
 
     client.bind(port, () => {
         client.setBroadcast(true);
-        client.send(JSON.stringify(message), 0, message.length, port, broadcastIp, () => {
+        client.send(payload, 0, payload.length, port, broadcastIp, () => {
             client.close();
         });
     });

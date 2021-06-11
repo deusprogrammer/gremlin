@@ -1,17 +1,43 @@
-var express = require('express');
-var path = require('path');
-var logger = require('morgan');
+const express = require('express');
+const logger = require('morgan');
 
-var puzzles = require('./routes/puzzles');
-var system = require('./routes/system');
+const puzzles = require('./routes/puzzles');
+const system = require('./routes/system');
+const users = require('./routes/users');
 
-var app = express();
+let sessions = {};
+
+const middleware = (req, res, next) => {
+    req.sessions = sessions;
+
+    console.log("SESSIONS: " + JSON.stringify(sessions, null, 5));
+
+    if (req.headers['Authorization']) {
+        let [authType, token] = req.headers['Authorization'].split(" ");
+        
+        if (authType === "Bearer") {
+            let session = sessions[token];
+
+            if (!session || Date.now() > session.expires) {
+                res.status(401);
+                return res.send();
+            }
+
+            req.user = session.user;
+        }
+    }
+
+    next();
+}
+
+const app = express();
 
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use('/puzzles', puzzles);
-app.use('/system', system);
+app.use('/users', middleware, users);
+app.use('/puzzles', middleware, puzzles);
+app.use('/system', middleware, system);
 
 module.exports = app;

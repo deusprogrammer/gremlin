@@ -48,7 +48,7 @@ def listenForBroadcast(puzzleId, eventListeners):
     while running:
         data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
         body = json.loads(data)
-        if body['type'] == "initialize":
+        if body['type'] == "ping":
             heartbeat(body, addr, puzzleId)
             eventListeners['onHeartBeat'](body)
         elif body['type'] == "activate" and body['puzzle'] == puzzleId:

@@ -60,6 +60,11 @@ router.route('/')
         return res.json(systemContext.puzzles);
     })
     .post(async (req, res) => {
+        if (!req.user || !req.user.roles.include("SUPER_USER")) {
+            res.status(403);
+            return res.send();
+        }
+
         systemContext.puzzles[req.body.id] = req.body;
 
         // TODO Figure out how best to commit
@@ -73,6 +78,11 @@ router.route('/:id')
         return res.json(systemContext.puzzles[req.params.id]);
     })
     .put(async (req, res) => {
+        if (!req.user || !req.user.roles.include("SUPER_USER")) {
+            res.status(403);
+            return res.send();
+        }
+
         systemContext.puzzles[req.params.id] = req.body;
 
         // TODO Figure out how best to commit
@@ -81,6 +91,11 @@ router.route('/:id')
         return res.send();
     })
     .delete(async (req, res) => {
+        if (!req.user || !req.user.roles.include("SUPER_USER")) {
+            res.status(403);
+            return res.send();
+        }
+
         delete systemContext.puzzles[req.params.id];
 
         // TODO Figure out how best to commit
@@ -98,6 +113,11 @@ router.route('/:id/handlers')
         return res.send(script);
     })
     .put(async (req, res) => {
+        if (!req.user || !req.user.roles.include("SUPER_USER")) {
+            res.status(403);
+            return res.send();
+        }
+
         let puzzle = systemContext.puzzles[req.params.id];
         await storeModule(`${puzzlesContextRoot}/${puzzle.modulePath}`, req.body);
 
@@ -110,6 +130,8 @@ router.route('/:id/events')
         return res.send("Unimplemented");
     })
     .post(async (req, res) => {
+        // Verify event signature
+
         let puzzle = systemContext.puzzles[req.params.id];
         puzzle.eventHandlers[req.body.eventType]({...systemContext, puzzle});
         return res.send();

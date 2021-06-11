@@ -1,7 +1,7 @@
 const fs = require('fs');
 const dgram = require('dgram');
 
-let validateHandlers = (eventHandlers) => {
+const validateHandlers = (eventHandlers) => {
     let allowedHandlers = ['complete', 'fail', 'activate'];
 
     // Validate
@@ -12,7 +12,7 @@ let validateHandlers = (eventHandlers) => {
     });
 };
 
-let validateConfig = (config) => {
+const validateConfig = (config) => {
     let requiredFields = ['id', 'name', 'description', 'type', 'version', 'modulePath'];
 
     // Validate
@@ -23,7 +23,18 @@ let validateConfig = (config) => {
     });
 }
 
-let readFile = (filename, encoding = 'utf8') => {
+const validateUser = (user) => {
+    let requiredFields = ['username', 'roles', 'password'];
+
+    // Validate
+    requiredFields.forEach((field) => {
+        if (!field in user) {
+            throw new Error(`Field ${field} is missing in config object`);
+        }
+    });
+}
+
+const readFile = (filename, encoding = 'utf8') => {
     return new Promise((resolve, reject) => {
         fs.readFile(filename, encoding, function(err, data) {
             if (err) {
@@ -34,7 +45,7 @@ let readFile = (filename, encoding = 'utf8') => {
     })
 };
 
-let writeFile = (filename, data, encoding = 'utf8') => {
+const writeFile = (filename, data, encoding = 'utf8') => {
     return new Promise((resolve, reject) => {
         fs.writeFile(filename, data, encoding, (err) => {
             if (err) {
@@ -45,16 +56,16 @@ let writeFile = (filename, data, encoding = 'utf8') => {
     });
 };
 
-let createModule = (script) => {
+const createModule = (script) => {
     return new Function(script)();
 }
 
-let loadModule = async (modulePath) => {
+const loadModule = async (modulePath) => {
     let script = await readFile(modulePath);
     return createModule(script);
 };
 
-let loadPuzzles = async (contextRoot) => {
+const loadPuzzles = async (contextRoot) => {
     // Load puzzles from config file
     let puzzleJson = await readFile(`${contextRoot}/puzzles.json`);
     let puzzles = JSON.parse(puzzleJson);
@@ -75,14 +86,14 @@ let loadPuzzles = async (contextRoot) => {
     return puzzles;
 };
 
-let loadSounds = async (contextRoot) => {
+const loadSounds = async (contextRoot) => {
     let soundJson = await readFile(`${contextRoot}/sounds.json`);
     let sounds = JSON.parse(soundJson);
 
     return sounds;
 }
 
-let storeModule = async (modulePath, script) => {
+const storeModule = async (modulePath, script) => {
     let eventHandlers = createModule(script);
 
     // Validate
@@ -91,7 +102,7 @@ let storeModule = async (modulePath, script) => {
     await writeFile(modulePath, script);
 };
 
-let storePuzzles = async (puzzles, contextRoot) => {
+const storePuzzles = async (puzzles, contextRoot) => {
     for (let puzzleId in puzzles) {
         let puzzle = {...puzzles[puzzleId]};
         delete puzzle['eventHandlers'];
@@ -102,14 +113,7 @@ let storePuzzles = async (puzzles, contextRoot) => {
     await writeFile(`${contextRoot}/puzzles.json`, JSON.stringify(puzzles, null, 5));
 };
 
-let pingAllPuzzles = async () => {
-    await broadcastMessage({
-        type: "initialize",
-        port: process.env.PORT | "8888"
-    });
-}
-
-let broadcastMessage = async (message) => {
+const broadcastMessage = async (message) => {
     let client = dgram.createSocket("udp4");
     let broadcastIp = "255.255.255.255";
     let port = 6234;
@@ -124,6 +128,56 @@ let broadcastMessage = async (message) => {
     });
 }
 
+const pingAllPuzzles = async () => {
+    await broadcastMessage({
+        type: "ping",
+        port: process.env.PORT | "8888"
+    });
+}
+
+const resetAllPuzzles = async () => {
+    let puzzles = await loadPuzzles(puzzlesContextRoot);
+
+    puzzles.forEach((puzzle) => {
+        broadcastMessage({
+            type: "reset",
+            puzzle: puzzle.id,
+            port: process.env.PORT | "8888"
+        });
+    })
+}
+
+const encryptUser = async (unencryptedUser) => {
+    let encryptedUserString = Buffer.from(JSON.stringify(unencryptedUser));
+    return encryptedUserString.toString("base64");
+}
+
+const decryptUser = async (encryptedUserString) => {
+    let decryptedUserString = Buffer.from(encryptedUserString, "base64");
+    return JSON.parse(decryptedUserString.toString("ascii"));
+}
+
+const storeUser = async (user, contextRoot) => {
+    //Validate user doesn't already exsist
+    if (fs.existsSync(`${contextRoot}/${user.username}.json.b64`)) {
+        throw new Error("User already exists");
+      }
+
+    // Validate user schema
+    validateUser(user);
+    let encryptedUserString = await encryptUser(user);
+    await writeFile(`${contextRoot}/${user.username}.json.b64`, encryptedUserString);
+}
+
+const loadUser = async (username, contextRoot) => {
+    let encryptedUserString = await readFile(`${contextRoot}/${username}.json.b64`);
+    return decryptUser(encryptedUserString);
+}
+
+const randomUuid = () => {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+}
+
 module.exports = {
     readFile,
     writeFile,
@@ -133,5 +187,9 @@ module.exports = {
     storeModule,
     storePuzzles,
     pingAllPuzzles,
-    broadcastMessage
+    resetAllPuzzles,
+    broadcastMessage,
+    storeUser,
+    loadUser,
+    randomUuid
 };

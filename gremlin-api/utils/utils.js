@@ -1,5 +1,6 @@
 const fs = require('fs');
 const dgram = require('dgram');
+const crypto = require('crypto');
 
 const validateHandlers = (eventHandlers) => {
     let allowedHandlers = ['complete', 'fail', 'activate'];
@@ -118,6 +119,9 @@ const broadcastMessage = async (message) => {
     let broadcastIp = "255.255.255.255";
     let port = 6234;
 
+    message.ts = Date.now();
+    message.sig = hmacSHA1(process.env.SHARED_SECRET_KEY, message.type + message.ts);
+
     let payload = JSON.stringify(message);
 
     client.bind(port, () => {
@@ -131,6 +135,7 @@ const broadcastMessage = async (message) => {
 const pingAllPuzzles = async () => {
     await broadcastMessage({
         type: "ping",
+        puzzle: "ALL",
         port: process.env.PORT | "8888"
     });
 }
@@ -178,6 +183,10 @@ const randomUuid = () => {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
+const hmacSHA1 = (hmacSecret, data) => {
+    return crypto.createHmac('sha1', hmacSecret).update(data).digest().toString('base64');
+}
+
 module.exports = {
     readFile,
     writeFile,
@@ -191,5 +200,6 @@ module.exports = {
     broadcastMessage,
     storeUser,
     loadUser,
-    randomUuid
+    randomUuid,
+    hmacSHA1
 };

@@ -10,7 +10,8 @@
           "description": "The player must put a slide on the microscope to activate a reed switch.",
           "type": "SWITCH",
           "version": "1.1",
-          "modulePath": "microscope.js"
+          "modulePath": "microscope.js",
+          "eventHandlers": {}
      },
      "dog": {
           "id": "dog",
@@ -18,6 +19,7 @@
           "description": "Kick the dog to unlock a drawer",
           "version": "1.0",
           "type": "DOG",
-          "modulePath": "dog.js"
+          "modulePath": "dog.js",
+          "eventHandlers": {}
      }
 }

@@ -3,10 +3,10 @@ import requests
 import json
 import threading
 import os
-
 import hashlib
 import hmac
 import base64
+import time
 
 serverData = {}
 
@@ -20,18 +20,21 @@ def make_digest(message, key):
     return str(signature2, 'UTF-8')
 
 def notifyServer(status, puzzleId):
-    requests.post(f'http://{serverData.get("ipAddress")}:{serverData.get("port")}/puzzles/{puzzleId}/events', data = {
-        'eventType': status
-    })
+    payload = {
+        'eventType': status,
+        'ts': time.time()
+    }
+    payload['sig'] = make_digest(payload['eventType'] + str(payload['ts']), os.getenv('SHARED_SECRET_KEY'))
+    requests.post(f'http://{serverData.get("ipAddress")}:{serverData.get("port")}/puzzles/{puzzleId}/events', data = payload)
 
 def pingServer(puzzleId):
     requests.post(f'http://{serverData.get("ipAddress")}:{serverData.get("port")}/puzzles/{puzzleId}/ping')
 
 def solvePuzzle(puzzleId):
-    notifyServer("complete")
+    notifyServer("complete", puzzleId)
 
 def failPuzzle(puzzleId):
-    notifyServer("fail")
+    notifyServer("fail", puzzleId)
 
 def activatePuzzle(puzzleId):
     notifyServer("activate", puzzleId)

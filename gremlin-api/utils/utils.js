@@ -162,9 +162,9 @@ const decryptUser = async (encryptedUserString) => {
     return JSON.parse(decryptedUserString.toString("ascii"));
 }
 
-const storeUser = async (user, contextRoot) => {
+const storeUser = async (user, contextRoot, update) => {
     //Validate user doesn't already exsist
-    if (fs.existsSync(`${contextRoot}/${user.username}.json.b64`)) {
+    if (!update && fs.existsSync(`${contextRoot}/${user.username}.json.b64`)) {
         throw new Error("User already exists");
       }
 

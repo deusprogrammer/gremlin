@@ -22,6 +22,9 @@ router.route('/:id')
     .get(async (req, res) => {
         try {
             let user = await loadUser(req.params.id, usersContextRoot);
+
+            delete user["password"];
+
             res.status(200);
             res.json(user);
         } catch (e) {
@@ -33,12 +36,14 @@ router.route('/:id')
     })
     .put(async (req, res) => {
         try {
-            if (!req.user || !req.user.roles.include("SUPER_USER")) {
+            console.log("USER: " + JSON.stringify(req.user, null, 5));
+            if (!req.user || (!req.user.username === req.params.id && !req.user.roles.include("SUPER_USER"))) {
+                console.error("User lacks proper authentication")
                 res.status(403);
                 return res.send();
             }
 
-            storeUser(req.body, usersContextRoot);
+            await storeUser(req.body, usersContextRoot, true);
 
             res.status(200);
             return res.send();

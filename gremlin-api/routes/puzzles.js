@@ -1,7 +1,7 @@
 const express = require('express');
 //const sound = require('sound-play');
 const sound = require('play-sound')(opts = {player: "afplay"})
-const {loadPuzzles, storePuzzles, storeModule, readFile, broadcastMessage, pingAllPuzzles, loadSounds} = require('../utils/utils');
+const {loadPuzzles, storePuzzles, storeModule, readFile, broadcastMessage, pingAllPuzzles, loadSounds, hmacSHA1} = require('../utils/utils');
 
 let router = express.Router();
 const puzzlesContextRoot = '../assets/puzzles';
@@ -119,6 +119,12 @@ router.route('/:id/handlers')
         }
 
         let puzzle = systemContext.puzzles[req.params.id];
+
+        if (!puzzle) {
+            res.status(404);
+            res.send();
+        }
+
         await storeModule(`${puzzlesContextRoot}/${puzzle.modulePath}`, req.body);
 
         return res.send();
@@ -130,16 +136,33 @@ router.route('/:id/events')
         return res.send("Unimplemented");
     })
     .post(async (req, res) => {
-        // Verify event signature
+        if (!req.user) {    // If no auth present, check for a signature
+            let sig = hmacSHA1(process.env.SHARED_SECRET_KEY, req.body.eventType + req.body.ts);
+            if (sig !== req.body.sig) {
+                res.status(403);
+                return res.send();
+            }
+        } else {            // If auth present, check for a valid role
+            if (["USER", "SUPER_USER"].includes(!req.user.roles)) {
+                res.status(403);
+                return res.send();
+            }
+        }
 
         let puzzle = systemContext.puzzles[req.params.id];
+
+        if (!puzzle || !puzzle.eventHandlers[req.body.eventType]) {
+            res.status(404);
+            return res.send();
+        }
+
         puzzle.eventHandlers[req.body.eventType]({...systemContext, puzzle});
         return res.send();
     });
 
 router.route('/:id/ping')
     .post(async (req, res) => {
-	console.log("PING RECEIVED FROM " + systemContext.puzzles[req.params.id].name);
+	    console.log("PING RECEIVED FROM " + systemContext.puzzles[req.params.id].name);
         systemContext.puzzles[req.params.id].lastPing = Date.now();
 
         return res.send();

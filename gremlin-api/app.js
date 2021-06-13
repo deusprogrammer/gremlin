@@ -12,13 +12,18 @@ const middleware = (req, res, next) => {
 
     console.log("SESSIONS: " + JSON.stringify(sessions, null, 5));
 
-    if (req.headers['Authorization']) {
-        let [authType, token] = req.headers['Authorization'].split(" ");
+    Object.keys(req.headers).forEach((key) => {
+        console.log(key + " => " + req.headers[key]);
+    })
+
+    if (req.headers['authorization']) {
+        let [authType, token] = req.headers['authorization'].split(" ");
         
         if (authType === "Bearer") {
             let session = sessions[token];
 
             if (!session || Date.now() > session.expires) {
+                console.error("Expired token");
                 res.status(401);
                 return res.send();
             }

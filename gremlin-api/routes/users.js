@@ -71,7 +71,7 @@ router.route('/auth')
             req.sessions[token] = {
                 user,
                 token,
-                expires: Date.now() + 60 * 60 * 24
+                expires: Date.now() + (60 * 60 * 24 * 1000)
             };
 
             res.status(200);

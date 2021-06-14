@@ -1,5 +1,6 @@
 const express = require('express');
 const logger = require('morgan');
+const cors = require('cors');
 
 const puzzles = require('./routes/puzzles');
 const system = require('./routes/system');
@@ -12,8 +13,9 @@ const middleware = (req, res, next) => {
 
     console.log("SESSIONS: " + JSON.stringify(sessions, null, 5));
 
+    console.log("Headers:");
     Object.keys(req.headers).forEach((key) => {
-        console.log(key + " => " + req.headers[key]);
+        console.log("\t" + key + " => " + req.headers[key]);
     })
 
     if (req.headers['authorization']) {
@@ -22,7 +24,13 @@ const middleware = (req, res, next) => {
         if (authType === "Bearer") {
             let session = sessions[token];
 
-            if (!session || Date.now() > session.expires) {
+            if (!session) {
+                console.error("No session found");
+                res.status(401);
+                return res.send();
+            }
+
+            if (Date.now() > session.expires) {
                 console.error("Expired token");
                 res.status(401);
                 return res.send();
@@ -38,6 +46,7 @@ const middleware = (req, res, next) => {
 const app = express();
 
 app.use(logger('dev'));
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

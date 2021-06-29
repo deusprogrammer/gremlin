@@ -1,12 +1,34 @@
-let {loadUser, storeUser, randomUuid} = require('../utils/utils');
+let {loadUser, storeUser, randomUuid, listUsers} = require('../utils/utils');
 let express = require('express');
 let router = express.Router();
 
 const usersContextRoot = '../assets/users';
 
 router.route('/')
+    .get(async (req, res) => {
+        try {
+            if (!req.user || !req.user.roles.includes("SUPER_USER")) {
+                console.error("User lacks proper authentication")
+                res.status(403);
+                return res.send();
+            }
+
+            res.status(200);
+            res.json(await listUsers(usersContextRoot));
+        } catch (e) {
+            console.error(e);
+            res.status(500);
+            return res.send();
+        }
+    })
     .post(async (req, res) => {
         try {
+            if (!req.user || !req.user.roles.includes("SUPER_USER")) {
+                console.error("User lacks proper authentication")
+                res.status(403);
+                return res.send();
+            }
+
             req.body.roles = ["USER"];
             await storeUser(req.body, usersContextRoot);
             res.status(200);
@@ -36,8 +58,7 @@ router.route('/:id')
     })
     .put(async (req, res) => {
         try {
-            console.log("USER: " + JSON.stringify(req.user, null, 5));
-            if (!req.user || (!req.user.username === req.params.id && !req.user.roles.include("SUPER_USER"))) {
+            if (!req.user || (!req.user.username === req.params.id && !req.user.roles.includes("SUPER_USER"))) {
                 console.error("User lacks proper authentication")
                 res.status(403);
                 return res.send();
@@ -58,8 +79,6 @@ router.route('/auth')
     .post(async (req, res) => {
         try {
             let user = await loadUser(req.body.username, usersContextRoot);
-
-            console.log(user.password + " === " + req.body.password);
 
             if (user.password !== req.body.password) {
                 res.status(401);

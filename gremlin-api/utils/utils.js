@@ -166,7 +166,7 @@ const storeUser = async (user, contextRoot, update) => {
     //Validate user doesn't already exsist
     if (!update && fs.existsSync(`${contextRoot}/${user.username}.json.b64`)) {
         throw new Error("User already exists");
-      }
+    }
 
     // Validate user schema
     validateUser(user);
@@ -177,6 +177,19 @@ const storeUser = async (user, contextRoot, update) => {
 const loadUser = async (username, contextRoot) => {
     let encryptedUserString = await readFile(`${contextRoot}/${username}.json.b64`);
     return decryptUser(encryptedUserString);
+}
+
+const listUsers = async (contextRoot) => {
+    let userFiles = fs.readdirSync(contextRoot);
+    let filteredFiles = userFiles.filter((userFile) => {
+        return !userFile.startsWith('.');
+    })
+    return await Promise.all(filteredFiles.map(async (userFile) => {
+        let username = userFile.replace('.json.b64', '');
+        let user = await loadUser(username, contextRoot);
+        delete user["password"];
+        return user;
+    }));
 }
 
 const randomUuid = () => {
@@ -200,6 +213,7 @@ module.exports = {
     broadcastMessage,
     storeUser,
     loadUser,
+    listUsers,
     randomUuid,
     hmacSHA1
 };

@@ -8,7 +8,10 @@ import hmac
 import base64
 import time
 
-serverData = {}
+serverData = {
+}
+
+status = "up"
 
 def make_digest(message, key):
     key = bytes(key, 'UTF-8')
@@ -28,16 +31,32 @@ def notifyServer(status, puzzleId):
     requests.post(f'http://{serverData.get("ipAddress")}:{serverData.get("port")}/puzzles/{puzzleId}/events', data = payload)
 
 def pingServer(puzzleId):
-    requests.post(f'http://{serverData.get("ipAddress")}:{serverData.get("port")}/puzzles/{puzzleId}/ping')
+    requests.post(f'http://{serverData.get("ipAddress")}:{serverData.get("port")}/puzzles/{puzzleId}/ping', data = {
+        "status": status
+    })
+
+def getStatus():
+    return status
 
 def solvePuzzle(puzzleId):
+    global status
     notifyServer("complete", puzzleId)
+    status = "completed"
 
 def failPuzzle(puzzleId):
+    global status
     notifyServer("fail", puzzleId)
+    status = "failed"
 
 def activatePuzzle(puzzleId):
+    global status
     notifyServer("activate", puzzleId)
+    status = "activated"
+
+def resetPuzzle(puzzleId):
+    global status
+    notifyServer("reset", puzzleId)
+    status = "up"
 
 def heartbeat(body, addr, puzzleId):
     serverData['ipAddress'] = addr[0]

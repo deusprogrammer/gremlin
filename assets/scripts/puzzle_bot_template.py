@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from gremlin.assets.scripts.puzzle_bot_api import resetPuzzle
 import socket
 import requests
 import json
@@ -15,12 +16,15 @@ PUZZLE_ID = "<PUZZLE_ID_HERE>"
 
 def onActivate(body):
     print(f'Puzzle {PUZZLE_ID} activated')
+    activatePuzzle(PUZZLE_ID)
 
 def onReset(body):
     print(f'Puzzle {PUZZLE_ID} reset')
+    resetPuzzle(PUZZLE_ID)
 
 def onSolve(body):
     print(f'Puzzle {PUZZLE_ID} solved')
+    solvePuzzle(PUZZLE_ID)
 
 def onHeartBeat(body):
     print(f'Heartbeat')

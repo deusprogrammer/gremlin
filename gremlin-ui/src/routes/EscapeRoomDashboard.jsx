@@ -14,13 +14,20 @@ const getOptions = () => {
 
 const EscapeRoomDashboard = (props) => {
     const [puzzles, setPuzzles] = useState([]);
-    useEffect(async () => {
+
+    const refreshPuzzles = async () => {
         try {
             let res = await axios.get(`${CONTEXT_ROOT}/puzzles`, getOptions());
             setPuzzles(res.data);
         } catch (error) {
             toast("Unable to retrieve puzzles", {type: "error"});
         }
+    };
+
+    useEffect(async () => {
+        refreshPuzzles();
+
+        window.setInterval(refreshPuzzles, 15000);
     }, []);
 
     return (
@@ -54,9 +61,9 @@ const EscapeRoomDashboard = (props) => {
                                 {puzzle.name}
                             </div>
                             <div className="col-2">
-                                {!puzzle.lastPinged || Date.now() - puzzle.lastPinged > 10 * 1000 ? 
-                                <span style={{color: "red"}}>Down</span> : 
-                                <span style={{color: "green"}}>Up</span>}
+                                {!puzzle.lastPing || (Date.now() - puzzle.lastPing) > 30 * 1000 ? 
+                                <span style={{color: "red"}}>down</span> : 
+                                <span style={{color: "green"}}>{puzzle.status ? puzzle.status : "Polling..."}</span>}
                             </div>
                             <div className="col">
                                 <button>Reset</button>

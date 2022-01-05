@@ -17,7 +17,7 @@ function App() {
             <ToastContainer />
             <Router>
                 <Switch>
-                    <Route exact path={`${process.env.PUBLIC_URL}/`} component={Home} />
+                    <Route exact path={`${process.env.PUBLIC_URL}/`} component={EscapeRoomDashboard} />
                     <Route exact path={`${process.env.PUBLIC_URL}/login`} component={Login} />
                     <Route exact path={`${process.env.PUBLIC_URL}/dashboard`} component={EscapeRoomDashboard} />
                     <Route exact path={`${process.env.PUBLIC_URL}/manage/users`} component={ManageUsers} />
